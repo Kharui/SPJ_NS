@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="google" content="notranslate">
-    <title>SPJ Cam v4.2</title>
+    <title>SPJ Cam v4.3</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#000000">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -39,11 +39,8 @@
         #canvas { max-width: 100%; max-height: 100%; object-fit: contain; }
         #loader { display: none; z-index: 400; }
 
-        /* SEMBUNYIKAN UI INSTALL JIKA SUDAH DI DALAM PWA */
         @media (display-mode: standalone) {
-            #installBanner {
-                display: none !important;
-            }
+            #installBanner { display: none !important; }
         }
 
         .fade-in { animation: fadeIn 0.5s ease-out; }
@@ -52,15 +49,31 @@
 </head>
 <body>
 
-    <div id="installBanner" class="fixed top-6 left-4 right-4 z-[300] hidden fade-in text-sans">
+    <div id="regModal" class="fixed inset-0 z-[600] bg-slate-900 flex items-center justify-center hidden p-6">
+        <div class="bg-white w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl space-y-6 fade-in">
+            <div class="text-center">
+                <h2 class="font-black text-2xl uppercase tracking-tighter text-slate-800 italic">Data Sopir</h2>
+                <p class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-1">Identitas untuk laporan Drive</p>
+            </div>
+            <div class="space-y-4">
+                <input type="text" id="regSopir" class="w-full p-4 bg-slate-50 rounded-2xl border-none outline-none focus:ring-2 focus:ring-blue-500 font-bold text-slate-800 uppercase" placeholder="NAMA SOPIR">
+                <input type="text" id="regNopol" class="w-full p-4 bg-slate-50 rounded-2xl border-none outline-none focus:ring-2 focus:ring-blue-500 font-bold text-slate-800 uppercase" placeholder="NOMOR KENDARAAN">
+            </div>
+            <button onclick="saveRegistration()" class="w-full bg-slate-900 text-white py-5 rounded-3xl font-black text-lg shadow-xl active:scale-95 transition-all uppercase tracking-tighter">
+                MULAI APLIKASI
+            </button>
+        </div>
+    </div>
+
+    <div id="installBanner" class="fixed top-6 left-4 right-4 z-[300] hidden fade-in">
         <div class="bg-white/95 backdrop-blur-md p-4 rounded-3xl shadow-2xl flex items-center justify-between border border-white/20">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 bg-blue-600 rounded-2xl flex items-center justify-center text-white overflow-hidden">
                     <img src="icon.png" alt="icon" class="w-full h-full object-cover">
                 </div>
                 <div>
-                    <p class="text-[12px] font-black text-slate-800 uppercase tracking-tight">Instal Aplikasi</p>
-                    <p class="text-[10px] text-slate-500 font-bold leading-none">Akses cepat & tanpa browser</p>
+                    <p class="text-[11px] font-black text-slate-800 uppercase tracking-tight leading-none">Instal SPJ Cam</p>
+                    <p class="text-[9px] text-slate-500 font-bold mt-1">Lebih stabil & offline</p>
                 </div>
             </div>
             <button onclick="triggerInstall()" class="bg-blue-600 text-white px-4 py-2 rounded-xl font-black text-[10px] uppercase active:scale-95 transition-all">PASANG</button>
@@ -84,10 +97,10 @@
                     <button onclick="resetCamera()" class="bg-slate-100 text-slate-500 py-3.5 rounded-2xl font-bold text-sm">📸 ULANGI</button>
                 </div>
                 <div class="space-y-3">
-                    <input type="text" id="namaProduk" class="w-full p-4 bg-slate-50 rounded-2xl border-none outline-none focus:ring-2 focus:ring-blue-500 font-bold text-slate-800" placeholder="Nama Barang">
-                    <input type="text" id="kotaTujuan" class="w-full p-4 bg-slate-50 rounded-2xl border-none outline-none focus:ring-2 focus:ring-blue-500 font-bold text-slate-800" placeholder="Kota Tujuan">
+                    <input type="text" id="namaProduk" class="w-full p-4 bg-slate-50 rounded-2xl border-none outline-none focus:ring-2 focus:ring-blue-500 font-bold text-slate-800 uppercase" placeholder="Nama Barang">
+                    <input type="text" id="kotaTujuan" class="w-full p-4 bg-slate-50 rounded-2xl border-none outline-none focus:ring-2 focus:ring-blue-500 font-bold text-slate-800 uppercase" placeholder="Tujuan">
                 </div>
-                <button id="btnSubmit" onclick="processUploadAndShare()" class="w-full bg-emerald-600 text-white py-5 rounded-[1.8rem] font-black text-lg shadow-xl active:scale-95 transition-all">KIRIM LAPORAN</button>
+                <button id="btnSubmit" onclick="processUploadAndShare()" class="w-full bg-emerald-600 text-white py-5 rounded-[1.8rem] font-black text-lg shadow-xl active:scale-95 transition-all uppercase tracking-tighter">KIRIM LAPORAN</button>
             </div>
         </div>
     </div>
@@ -95,7 +108,7 @@
     <div id="loader" class="fixed inset-0 bg-black/80 flex flex-col items-center justify-center">
         <div class="bg-white p-10 rounded-[2.5rem] text-center shadow-2xl">
             <div class="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p class="font-bold text-slate-800 text-lg uppercase tracking-tight">Mengirim...</p>
+            <p class="font-bold text-slate-800 text-lg uppercase tracking-tight">Sedang Mengirim...</p>
         </div>
     </div>
 
@@ -106,16 +119,38 @@
         const previewView = document.getElementById('previewView');
         const loader = document.getElementById('loader');
         const installBanner = document.getElementById('installBanner');
+        const regModal = document.getElementById('regModal');
         
         const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwg6IBAcPdHH3ybFXNLmfs9U91HmaPamx48Un8L2FLcOuGT_Au2sy48wV-TDQFjgoo1gQ/exec"; 
+        
         let photoData = null;
         let isUploaded = false; 
         let lastFileName = "";
         let deferredPrompt;
+        let userData = { sopir: '', nopol: '' };
+
+        // 1. Inisialisasi & Cek Registrasi
+        window.addEventListener('load', () => {
+            const saved = localStorage.getItem('spj_user_data');
+            if (saved) {
+                userData = JSON.parse(saved);
+                startApp();
+            } else {
+                regModal.classList.remove('hidden');
+            }
+        });
+
+        function saveRegistration() {
+            const s = document.getElementById('regSopir').value.trim().toUpperCase();
+            const n = document.getElementById('regNopol').value.trim().toUpperCase();
+            if (!s || !n) { alert("Lengkapi data!"); return; }
+            userData = { sopir: s, nopol: n };
+            localStorage.setItem('spj_user_data', JSON.stringify(userData));
+            regModal.classList.add('hidden');
+            startApp();
+        }
 
         async function startApp() {
-            cameraView.style.display = 'block';
-            previewView.style.display = 'none';
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ 
                     video: { facingMode: "environment", width: { ideal: 4096 }, height: { ideal: 2160 } } 
@@ -140,7 +175,7 @@
                 canvas.width = vW; canvas.height = vH;
                 context.drawImage(video, 0, 0, vW, vH);
             }
-            updatePhotoData();
+            photoData = canvas.toDataURL('image/jpeg', 0.85);
             cameraView.style.display = 'none';
             previewView.style.display = 'flex';
             isUploaded = false; 
@@ -157,11 +192,9 @@
             canvas.width = tempCanvas.width;
             canvas.height = tempCanvas.height;
             canvas.getContext('2d').drawImage(tempCanvas, 0, 0);
-            updatePhotoData();
+            photoData = canvas.toDataURL('image/jpeg', 0.85);
             isUploaded = false; 
         }
-
-        function updatePhotoData() { photoData = canvas.toDataURL('image/jpeg', 0.85); }
 
         function resetCamera() {
             cameraView.style.display = 'block';
@@ -172,12 +205,16 @@
         }
 
         async function processUploadAndShare() {
-            const produk = document.getElementById('namaProduk').value;
-            const kota = document.getElementById('kotaTujuan').value;
+            const produk = document.getElementById('namaProduk').value.trim();
+            const kota = document.getElementById('kotaTujuan').value.trim();
             if (!produk || !kota) { alert("Lengkapi data!"); return; }
+            
             loader.style.display = 'flex';
             const now = new Date();
-            const formatNama = `${String(now.getDate()).padStart(2, '0')}-${String(now.getMonth() + 1).padStart(2, '0')}-${now.getFullYear()}_${produk}_${kota}`;
+            const tgl = `${String(now.getDate()).padStart(2, '0')}-${String(now.getMonth() + 1).padStart(2, '0')}-${now.getFullYear()}`;
+            
+            // Nama File Drive (Lengkap)
+            const formatNama = `${tgl}_${produk}_${kota}_${userData.sopir}_${userData.nopol}`;
             
             if (!isUploaded) {
                 fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ image: photoData, name: formatNama }) });
@@ -189,22 +226,23 @@
                 try {
                     const blob = await (await fetch(photoData)).blob();
                     const file = new File([blob], `${lastFileName}.jpg`, { type: "image/jpeg" });
-                    const pesan = `${produk} ${kota}`;
+                    
+                    // Pesan WhatsApp (Singkat: Nama Barang Tujuan)
+                    const pesanWA = `${produk} ${kota}`;
+                    
                     if (navigator.share && navigator.canShare({ files: [file] })) {
-                        await navigator.share({ files: [file], text: pesan });
+                        await navigator.share({ files: [file], text: pesanWA });
                     } else {
-                        window.location.href = `https://wa.me/?text=${encodeURIComponent(pesan)}`;
+                        window.location.href = `https://wa.me/?text=${encodeURIComponent(pesanWA)}`;
                     }
                 } catch (err) { console.log("Share cancel"); }
                 finally { loader.style.display = 'none'; }
             }, 800);
         }
 
-        // LOGIKA INSTALASI PWA
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
-            // Tampilkan banner atas
             installBanner.style.display = 'block';
         });
 
@@ -212,23 +250,13 @@
             if (!deferredPrompt) return;
             deferredPrompt.prompt();
             const { outcome } = await deferredPrompt.userChoice;
-            if (outcome === 'accepted') {
-                installBanner.style.display = 'none';
-            }
+            if (outcome === 'accepted') installBanner.style.display = 'none';
             deferredPrompt = null;
         }
 
-        window.addEventListener('appinstalled', () => {
-            installBanner.style.display = 'none';
-        });
-
         if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js');
-            });
+            navigator.serviceWorker.register('sw.js');
         }
-
-        startApp();
     </script>
 </body>
 </html>
