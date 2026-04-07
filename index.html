@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" translate="no">
 <head>
-    <meta name="google" content="notranslate">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SPJ Cam v4.1</title>
+    <meta name="google" content="notranslate">
+    <title>SPJ Cam v4.2</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#000000">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -39,44 +39,33 @@
         #canvas { max-width: 100%; max-height: 100%; object-fit: contain; }
         #loader { display: none; z-index: 400; }
 
-        /* Floating Install UI */
-        #manualInstallBtn {
-            position: fixed; bottom: 25px; right: 20px; z-index: 500;
-            display: none; /* Muncul via JS jika didukung */
-        }
-
-        /* SEMBUNYIKAN UI INSTALL JIKA DI DALAM PWA (Standalone) */
+        /* SEMBUNYIKAN UI INSTALL JIKA SUDAH DI DALAM PWA */
         @media (display-mode: standalone) {
-            #manualInstallBtn, #installBanner {
+            #installBanner {
                 display: none !important;
             }
         }
 
         .fade-in { animation: fadeIn 0.5s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
 
-    <div id="installBanner" class="fixed top-6 left-4 right-4 z-[300] hidden fade-in">
-        <div class="bg-white/95 backdrop-blur-md p-4 rounded-3xl shadow-2xl flex items-center justify-between border border-white/20 font-sans">
+    <div id="installBanner" class="fixed top-6 left-4 right-4 z-[300] hidden fade-in text-sans">
+        <div class="bg-white/95 backdrop-blur-md p-4 rounded-3xl shadow-2xl flex items-center justify-between border border-white/20">
             <div class="flex items-center gap-3">
-                <div class="w-10 h-10 bg-blue-600 rounded-2xl flex items-center justify-center text-white">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4" /></svg>
+                <div class="w-10 h-10 bg-blue-600 rounded-2xl flex items-center justify-center text-white overflow-hidden">
+                    <img src="icon.png" alt="icon" class="w-full h-full object-cover">
                 </div>
                 <div>
                     <p class="text-[12px] font-black text-slate-800 uppercase tracking-tight">Instal Aplikasi</p>
-                    <p class="text-[10px] text-slate-500 font-bold leading-none">Akses lebih cepat & stabil</p>
+                    <p class="text-[10px] text-slate-500 font-bold leading-none">Akses cepat & tanpa browser</p>
                 </div>
             </div>
             <button onclick="triggerInstall()" class="bg-blue-600 text-white px-4 py-2 rounded-xl font-black text-[10px] uppercase active:scale-95 transition-all">PASANG</button>
         </div>
     </div>
-
-    <button id="manualInstallBtn" onclick="triggerInstall()" class="bg-blue-600 text-white px-5 py-3.5 rounded-full shadow-2xl active:scale-95 transition-all flex items-center justify-center fade-in">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-        <span class="ml-2 font-black text-[11px] uppercase tracking-wider pr-1">Instal App</span>
-    </button>
 
     <div id="cameraView">
         <video id="video" autoplay playsinline></video>
@@ -104,9 +93,9 @@
     </div>
 
     <div id="loader" class="fixed inset-0 bg-black/80 flex flex-col items-center justify-center">
-        <div class="bg-white p-10 rounded-[2.5rem] text-center">
+        <div class="bg-white p-10 rounded-[2.5rem] text-center shadow-2xl">
             <div class="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p class="font-bold text-slate-800 text-lg uppercase tracking-tight text-center">Mengirim...</p>
+            <p class="font-bold text-slate-800 text-lg uppercase tracking-tight">Mengirim...</p>
         </div>
     </div>
 
@@ -117,7 +106,6 @@
         const previewView = document.getElementById('previewView');
         const loader = document.getElementById('loader');
         const installBanner = document.getElementById('installBanner');
-        const manualInstallBtn = document.getElementById('manualInstallBtn');
         
         const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwg6IBAcPdHH3ybFXNLmfs9U91HmaPamx48Un8L2FLcOuGT_Au2sy48wV-TDQFjgoo1gQ/exec"; 
         let photoData = null;
@@ -212,13 +200,12 @@
             }, 800);
         }
 
-        // PWA PROMPT LOGIC
+        // LOGIKA INSTALASI PWA
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
-            // Tampilkan UI Install (Hanya jalan di browser biasa)
+            // Tampilkan banner atas
             installBanner.style.display = 'block';
-            manualInstallBtn.style.display = 'flex';
         });
 
         async function triggerInstall() {
@@ -227,14 +214,12 @@
             const { outcome } = await deferredPrompt.userChoice;
             if (outcome === 'accepted') {
                 installBanner.style.display = 'none';
-                manualInstallBtn.style.display = 'none';
             }
             deferredPrompt = null;
         }
 
         window.addEventListener('appinstalled', () => {
             installBanner.style.display = 'none';
-            manualInstallBtn.style.display = 'none';
         });
 
         if ('serviceWorker' in navigator) {
