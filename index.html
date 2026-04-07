@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SPJ Cam v4.1</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#000000">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background: #000; font-family: sans-serif; }
+        
+        /* Tampilan Kamera */
+        #cameraView { position: fixed; inset: 0; z-index: 10; display: block; }
+        #video { width: 100%; height: 100%; object-fit: cover; }
+        
+        .shutter-btn {
+            position: absolute; bottom: 50px; left: 50%; transform: translateX(-50%);
+            width: 75px; height: 75px; background: white; border-radius: 50%;
+            border: 6px solid rgba(255,255,255,0.3); z-index: 20; cursor: pointer;
+        }
+
+        /* Overlay Preview */
+        #previewView { 
+            display: none; position: fixed; inset: 0; 
+            background: rgba(15, 23, 42, 0.98); backdrop-filter: blur(15px); 
+            z-index: 100; overflow-y: auto; padding: 20px; 
+        }
+        
+        .preview-container {
+            width: 100%; max-width: 400px; aspect-ratio: 1 / 1; 
+            background: #000; display: flex; align-items: center;
+            justify-content: center; overflow: hidden; border-radius: 24px;
+            margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        #canvas { max-width: 100%; max-height: 100%; object-fit: contain; }
+        #loader { display: none; z-index: 400; }
+
+        /* Floating Install UI */
+        #manualInstallBtn {
+            position: fixed; bottom: 25px; right: 20px; z-index: 500;
+            display: none; /* Muncul via JS jika didukung */
+        }
+
+        /* SEMBUNYIKAN UI INSTALL JIKA DI DALAM PWA (Standalone) */
+        @media (display-mode: standalone) {
+            #manualInstallBtn, #installBanner {
+                display: none !important;
+            }
+        }
+
+        .fade-in { animation: fadeIn 0.5s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+    <div id="installBanner" class="fixed top-6 left-4 right-4 z-[300] hidden fade-in">
+        <div class="bg-white/95 backdrop-blur-md p-4 rounded-3xl shadow-2xl flex items-center justify-between border border-white/20 font-sans">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-blue-600 rounded-2xl flex items-center justify-center text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4" /></svg>
+                </div>
+                <div>
+                    <p class="text-[12px] font-black text-slate-800 uppercase tracking-tight">Instal Aplikasi</p>
+                    <p class="text-[10px] text-slate-500 font-bold leading-none">Akses lebih cepat & stabil</p>
+                </div>
+            </div>
+            <button onclick="triggerInstall()" class="bg-blue-600 text-white px-4 py-2 rounded-xl font-black text-[10px] uppercase active:scale-95 transition-all">PASANG</button>
+        </div>
+    </div>
+
+    <button id="manualInstallBtn" onclick="triggerInstall()" class="bg-blue-600 text-white px-5 py-3.5 rounded-full shadow-2xl active:scale-95 transition-all flex items-center justify-center fade-in">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+        <span class="ml-2 font-black text-[11px] uppercase tracking-wider pr-1">Instal App</span>
+    </button>
+
+    <div id="cameraView">
+        <video id="video" autoplay playsinline></video>
+        <button onclick="takePhoto()" class="shutter-btn shadow-2xl"></button>
+    </div>
+
+    <div id="previewView" class="flex flex-col items-center">
+        <div class="w-full max-w-md">
+            <h2 class="text-white text-center font-black text-lg italic uppercase my-4 tracking-tighter">Review Laporan</h2>
+            <div class="preview-container">
+                <canvas id="canvas"></canvas>
+            </div>
+            <div class="bg-white p-6 rounded-[2.5rem] shadow-2xl space-y-4">
+                <div class="grid grid-cols-2 gap-3">
+                    <button onclick="rotateManual()" class="bg-amber-500 text-white py-3.5 rounded-2xl font-bold text-sm">🔄 PUTAR</button>
+                    <button onclick="resetCamera()" class="bg-slate-100 text-slate-500 py-3.5 rounded-2xl font-bold text-sm">📸 ULANGI</button>
+                </div>
+                <div class="space-y-3">
+                    <input type="text" id="namaProduk" class="w-full p-4 bg-slate-50 rounded-2xl border-none outline-none focus:ring-2 focus:ring-blue-500 font-bold text-slate-800" placeholder="Nama Barang">
+                    <input type="text" id="kotaTujuan" class="w-full p-4 bg-slate-50 rounded-2xl border-none outline-none focus:ring-2 focus:ring-blue-500 font-bold text-slate-800" placeholder="Kota Tujuan">
+                </div>
+                <button id="btnSubmit" onclick="processUploadAndShare()" class="w-full bg-emerald-600 text-white py-5 rounded-[1.8rem] font-black text-lg shadow-xl active:scale-95 transition-all">KIRIM LAPORAN</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="loader" class="fixed inset-0 bg-black/80 flex flex-col items-center justify-center">
+        <div class="bg-white p-10 rounded-[2.5rem] text-center">
+            <div class="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p class="font-bold text-slate-800 text-lg uppercase tracking-tight text-center">Mengirim...</p>
+        </div>
+    </div>
+
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const cameraView = document.getElementById('cameraView');
+        const previewView = document.getElementById('previewView');
+        const loader = document.getElementById('loader');
+        const installBanner = document.getElementById('installBanner');
+        const manualInstallBtn = document.getElementById('manualInstallBtn');
+        
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwg6IBAcPdHH3ybFXNLmfs9U91HmaPamx48Un8L2FLcOuGT_Au2sy48wV-TDQFjgoo1gQ/exec"; 
+        let photoData = null;
+        let isUploaded = false; 
+        let lastFileName = "";
+        let deferredPrompt;
+
+        async function startApp() {
+            cameraView.style.display = 'block';
+            previewView.style.display = 'none';
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: "environment", width: { ideal: 4096 }, height: { ideal: 2160 } } 
+                });
+                video.srcObject = stream;
+            } catch (err) {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+                video.srcObject = stream;
+            }
+        }
+
+        function takePhoto() {
+            const context = canvas.getContext('2d');
+            let vW = video.videoWidth;
+            let vH = video.videoHeight;
+            if (vH > vW) {
+                canvas.width = vH; canvas.height = vW;
+                context.translate(canvas.width / 2, canvas.height / 2);
+                context.rotate(-90 * Math.PI / 180); 
+                context.drawImage(video, -vW / 2, -vH / 2, vW, vH);
+            } else {
+                canvas.width = vW; canvas.height = vH;
+                context.drawImage(video, 0, 0, vW, vH);
+            }
+            updatePhotoData();
+            cameraView.style.display = 'none';
+            previewView.style.display = 'flex';
+            isUploaded = false; 
+        }
+
+        function rotateManual() {
+            const tempCanvas = document.createElement('canvas');
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCanvas.width = canvas.height;
+            tempCanvas.height = canvas.width;
+            tempCtx.translate(tempCanvas.width / 2, tempCanvas.height / 2);
+            tempCtx.rotate(90 * Math.PI / 180); 
+            tempCtx.drawImage(canvas, -canvas.width / 2, -canvas.height / 2);
+            canvas.width = tempCanvas.width;
+            canvas.height = tempCanvas.height;
+            canvas.getContext('2d').drawImage(tempCanvas, 0, 0);
+            updatePhotoData();
+            isUploaded = false; 
+        }
+
+        function updatePhotoData() { photoData = canvas.toDataURL('image/jpeg', 0.85); }
+
+        function resetCamera() {
+            cameraView.style.display = 'block';
+            previewView.style.display = 'none';
+            document.getElementById('namaProduk').value = '';
+            document.getElementById('kotaTujuan').value = '';
+            isUploaded = false;
+        }
+
+        async function processUploadAndShare() {
+            const produk = document.getElementById('namaProduk').value;
+            const kota = document.getElementById('kotaTujuan').value;
+            if (!produk || !kota) { alert("Lengkapi data!"); return; }
+            loader.style.display = 'flex';
+            const now = new Date();
+            const formatNama = `${String(now.getDate()).padStart(2, '0')}-${String(now.getMonth() + 1).padStart(2, '0')}-${now.getFullYear()}_${produk}_${kota}`;
+            
+            if (!isUploaded) {
+                fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ image: photoData, name: formatNama }) });
+                isUploaded = true;
+                lastFileName = formatNama;
+            }
+
+            setTimeout(async () => {
+                try {
+                    const blob = await (await fetch(photoData)).blob();
+                    const file = new File([blob], `${lastFileName}.jpg`, { type: "image/jpeg" });
+                    const pesan = `${produk} ${kota}`;
+                    if (navigator.share && navigator.canShare({ files: [file] })) {
+                        await navigator.share({ files: [file], text: pesan });
+                    } else {
+                        window.location.href = `https://wa.me/?text=${encodeURIComponent(pesan)}`;
+                    }
+                } catch (err) { console.log("Share cancel"); }
+                finally { loader.style.display = 'none'; }
+            }, 800);
+        }
+
+        // PWA PROMPT LOGIC
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            // Tampilkan UI Install (Hanya jalan di browser biasa)
+            installBanner.style.display = 'block';
+            manualInstallBtn.style.display = 'flex';
+        });
+
+        async function triggerInstall() {
+            if (!deferredPrompt) return;
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            if (outcome === 'accepted') {
+                installBanner.style.display = 'none';
+                manualInstallBtn.style.display = 'none';
+            }
+            deferredPrompt = null;
+        }
+
+        window.addEventListener('appinstalled', () => {
+            installBanner.style.display = 'none';
+            manualInstallBtn.style.display = 'none';
+        });
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js');
+            });
+        }
+
+        startApp();
+    </script>
+</body>
+</html>
