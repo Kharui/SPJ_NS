@@ -1,5 +1,5 @@
 // Mengubah nama cache akan memaksa browser memperbarui semua file (Update aplikasi)
-const CACHE_NAME = 'spj-cam-v4.4';
+const CACHE_NAME = 'spj-cam-v4.5';
 
 // Daftar file yang akan disimpan di memori HP agar bisa dibuka tanpa internet
 const assets = [
