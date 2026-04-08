@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="google" content="notranslate">
-    <title>SPJ Cam v4.6</title>
+    <title>SPJ Cam v4.7</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#000000">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -48,24 +48,24 @@
 <body>
 
     <div id="toast" class="bg-red-600 text-white px-6 py-4 rounded-3xl shadow-2xl flex items-center gap-3">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg id="toastIcon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
         </svg>
-        <span id="toastMsg" class="font-bold text-sm tracking-tight leading-tight">Peringatan</span>
+        <span id="toastMsg" class="font-bold text-sm tracking-tight leading-tight uppercase">Peringatan</span>
     </div>
 
     <div id="regModal" class="fixed inset-0 z-[600] bg-slate-900 flex items-center justify-center hidden p-6">
         <div class="bg-white w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl space-y-6 fade-in">
             <div class="text-center">
-                <h2 class="font-black text-2xl uppercase tracking-tighter text-slate-800 italic">Data Sopir</h2>
-                <p class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-1">Identitas Laporan Drive</p>
+                <h2 class="font-black text-2xl uppercase tracking-tighter text-slate-800 italic">Data Kendaraan</h2>
+                <p class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-1">Data identitas untuk Google Drive</p>
             </div>
             <div class="space-y-4">
                 <input type="text" id="regSopir" class="w-full p-4 bg-slate-50 rounded-2xl border-none outline-none focus:ring-2 focus:ring-blue-500 font-bold text-slate-800 uppercase" placeholder="NAMA SOPIR">
-                <input type="text" id="regNopol" class="w-full p-4 bg-slate-50 rounded-2xl border-none outline-none focus:ring-2 focus:ring-blue-500 font-bold text-slate-800 uppercase" placeholder="NOMOR KENDARAAN">
+                <input type="text" id="regNopol" class="w-full p-4 bg-slate-50 rounded-2xl border-none outline-none focus:ring-2 focus:ring-blue-500 font-bold text-slate-800 uppercase" placeholder="NOMOR POLISI">
             </div>
             <button onclick="saveRegistration()" class="w-full bg-slate-900 text-white py-5 rounded-3xl font-black text-lg shadow-xl active:scale-95 transition-all uppercase tracking-tighter">
-                MULAI APLIKASI
+                SIMPAN & LANJUT
             </button>
         </div>
     </div>
@@ -78,10 +78,10 @@
                 </div>
                 <div>
                     <p class="text-[11px] font-black text-slate-800 uppercase tracking-tight leading-none">Instal SPJ Cam</p>
-                    <p class="text-[9px] text-slate-500 font-bold mt-1">Bebas Iklan & Stabil</p>
+                    <p class="text-[9px] text-slate-500 font-bold mt-1">Akses stabil & offline</p>
                 </div>
             </div>
-            <button onclick="triggerInstall()" class="bg-blue-600 text-white px-4 py-2 rounded-xl font-black text-[10px] uppercase active:scale-95 transition-all">PASANG</button>
+            <button onclick="triggerInstall()" class="bg-blue-600 text-white px-4 py-2 rounded-xl font-black text-[10px] uppercase active:scale-95 transition-all tracking-widest">PASANG</button>
         </div>
     </div>
 
@@ -98,12 +98,12 @@
             </div>
             <div class="bg-white p-6 rounded-[2.5rem] shadow-2xl space-y-4">
                 <div class="grid grid-cols-2 gap-3">
-                    <button onclick="rotateManual()" class="bg-amber-500 text-white py-3.5 rounded-2xl font-bold text-sm">🔄 PUTAR</button>
-                    <button onclick="resetCamera()" class="bg-slate-100 text-slate-500 py-3.5 rounded-2xl font-bold text-sm">📸 ULANGI</button>
+                    <button onclick="rotateManual()" class="bg-amber-500 text-white py-3.5 rounded-2xl font-bold text-sm uppercase">🔄 Putar</button>
+                    <button onclick="resetCamera()" class="bg-slate-100 text-slate-500 py-3.5 rounded-2xl font-bold text-sm uppercase tracking-tighter">📸 Ulangi</button>
                 </div>
                 <div class="space-y-3">
-                    <input type="text" id="namaProduk" class="w-full p-4 bg-slate-50 rounded-2xl border-none outline-none focus:ring-2 focus:ring-blue-500 font-bold text-slate-800 uppercase" placeholder="Nama Barang">
-                    <input type="text" id="kotaTujuan" class="w-full p-4 bg-slate-50 rounded-2xl border-none outline-none focus:ring-2 focus:ring-blue-500 font-bold text-slate-800 uppercase" placeholder="Tujuan">
+                    <input type="text" id="namaProduk" class="w-full p-4 bg-slate-50 rounded-2xl border-none outline-none focus:ring-2 focus:ring-blue-500 font-bold text-slate-800 uppercase" placeholder="NAMA BARANG">
+                    <input type="text" id="kotaTujuan" class="w-full p-4 bg-slate-50 rounded-2xl border-none outline-none focus:ring-2 focus:ring-blue-500 font-bold text-slate-800 uppercase" placeholder="TUJUAN">
                 </div>
                 <button id="btnSubmit" onclick="processUploadAndShare()" class="w-full bg-emerald-600 text-white py-5 rounded-[1.8rem] font-black text-lg shadow-xl active:scale-95 transition-all uppercase tracking-tighter">KIRIM LAPORAN</button>
             </div>
@@ -113,7 +113,7 @@
     <div id="loader" class="fixed inset-0 bg-black/80 flex flex-col items-center justify-center">
         <div class="bg-white p-10 rounded-[2.5rem] text-center shadow-2xl">
             <div class="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p class="font-bold text-slate-800 text-lg uppercase tracking-tight">Mengirim...</p>
+            <p class="font-bold text-slate-800 text-lg uppercase tracking-tight">Proses Kirim...</p>
         </div>
     </div>
 
@@ -123,10 +123,10 @@
         const cameraView = document.getElementById('cameraView');
         const previewView = document.getElementById('previewView');
         const loader = document.getElementById('loader');
-        const installBanner = document.getElementById('installBanner');
-        const regModal = document.getElementById('regModal');
         const toast = document.getElementById('toast');
         const toastMsg = document.getElementById('toastMsg');
+        const regModal = document.getElementById('regModal');
+        const installBanner = document.getElementById('installBanner');
         
         const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwg6IBAcPdHH3ybFXNLmfs9U91HmaPamx48Un8L2FLcOuGT_Au2sy48wV-TDQFjgoo1gQ/exec"; 
         
@@ -136,32 +136,51 @@
         let deferredPrompt;
         let userData = { sopir: '', nopol: '' };
 
-        function showWarning(msg) {
+        // DETEKSI BLUR (Laplacian Variance)
+        function isImageBlurry(cvs) {
+            const ctx = cvs.getContext('2d');
+            const imageData = ctx.getImageData(0, 0, cvs.width, cvs.height);
+            const pixels = imageData.data;
+            const width = imageData.width;
+            const height = imageData.height;
+            const grayData = new Int32Array(width * height);
+
+            for (let i = 0; i < pixels.length; i += 4) {
+                grayData[i / 4] = (pixels[i] + pixels[i + 1] + pixels[i + 2]) / 3;
+            }
+
+            let score = 0;
+            for (let y = 1; y < height - 1; y++) {
+                for (let x = 1; x < width - 1; x++) {
+                    const idx = y * width + x;
+                    const val = (grayData[idx] * 4) - 
+                                grayData[idx - 1] - grayData[idx + 1] - 
+                                grayData[idx - width] - grayData[idx + width];
+                    score += Math.abs(val);
+                }
+            }
+            const finalScore = score / (width * height);
+            return finalScore < 8; // Ambang batas blur (adjust jika perlu)
+        }
+
+        function showWarning(msg, isAlert = true) {
             toastMsg.innerText = msg;
+            toast.className = `fixed left-50 transform -translate-x-1/2 z-[999] width-[90%] max-w-[350px] transition-all p-4 rounded-3xl shadow-2xl flex items-center gap-3 text-white ${isAlert ? 'bg-red-600' : 'bg-amber-500'}`;
             toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), 3000);
+            setTimeout(() => toast.classList.remove('show'), 3500);
         }
 
         window.addEventListener('load', () => {
             const saved = localStorage.getItem('spj_user_data');
-            if (saved) {
-                userData = JSON.parse(saved);
-                startApp();
-            } else {
-                regModal.classList.remove('hidden');
-            }
+            if (saved) { userData = JSON.parse(saved); startApp(); } 
+            else { regModal.classList.remove('hidden'); }
         });
 
         function saveRegistration() {
             const s = document.getElementById('regSopir').value.trim().toUpperCase();
             let n = document.getElementById('regNopol').value.trim().toUpperCase();
             n = n.replace(/\s+/g, '');
-
-            if (!s || !n) { 
-                showWarning("LENGKAPI DATA TERLEBIH DAHULU!"); 
-                return; 
-            }
-            
+            if (!s || !n) { showWarning("Lengkapi data sopir & nopol!"); return; }
             userData = { sopir: s, nopol: n };
             localStorage.setItem('spj_user_data', JSON.stringify(userData));
             regModal.classList.add('hidden');
@@ -188,11 +207,8 @@
         }
 
         document.addEventListener("visibilitychange", () => {
-            if (document.hidden) {
-                stopApp();
-            } else if (cameraView.style.display !== 'none') {
-                startApp();
-            }
+            if (document.hidden) stopApp();
+            else if (cameraView.style.display !== 'none') startApp();
         });
 
         function takePhoto() {
@@ -208,6 +224,12 @@
                 canvas.width = vW; canvas.height = vH;
                 context.drawImage(video, 0, 0, vW, vH);
             }
+
+            // CEK KUALITAS GAMBAR SEBELUM PREVIEW
+            if (isImageBlurry(canvas)) {
+                showWarning("FOTO BURAM! MOHON AMBIL ULANG AGAR JELAS", false);
+            }
+
             photoData = canvas.toDataURL('image/jpeg', 0.85);
             cameraView.style.display = 'none';
             previewView.style.display = 'flex';
@@ -241,7 +263,7 @@
         async function processUploadAndShare() {
             const produk = document.getElementById('namaProduk').value.trim();
             const kota = document.getElementById('kotaTujuan').value.trim();
-            if (!produk || !kota) { showWarning("ISI NAMA BARANG & TUJUAN!"); return; }
+            if (!produk || !kota) { showWarning("Isi nama barang & tujuan!"); return; }
             
             loader.style.display = 'flex';
             const now = new Date();
