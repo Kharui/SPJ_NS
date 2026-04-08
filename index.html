@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="google" content="notranslate">
-    <title>SPJ Cam v4.5</title>
+    <title>SPJ Cam v4.6</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#000000">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -51,7 +51,7 @@
         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
         </svg>
-        <span id="toastMsg" class="font-bold text-sm tracking-tight leading-tight">Peringatan sistem</span>
+        <span id="toastMsg" class="font-bold text-sm tracking-tight leading-tight">Peringatan</span>
     </div>
 
     <div id="regModal" class="fixed inset-0 z-[600] bg-slate-900 flex items-center justify-center hidden p-6">
@@ -78,7 +78,7 @@
                 </div>
                 <div>
                     <p class="text-[11px] font-black text-slate-800 uppercase tracking-tight leading-none">Instal SPJ Cam</p>
-                    <p class="text-[9px] text-slate-500 font-bold mt-1">Tanpa Browser & Stabil</p>
+                    <p class="text-[9px] text-slate-500 font-bold mt-1">Bebas Iklan & Stabil</p>
                 </div>
             </div>
             <button onclick="triggerInstall()" class="bg-blue-600 text-white px-4 py-2 rounded-xl font-black text-[10px] uppercase active:scale-95 transition-all">PASANG</button>
@@ -113,7 +113,7 @@
     <div id="loader" class="fixed inset-0 bg-black/80 flex flex-col items-center justify-center">
         <div class="bg-white p-10 rounded-[2.5rem] text-center shadow-2xl">
             <div class="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p class="font-bold text-slate-800 text-lg uppercase tracking-tight">Sedang Mengirim...</p>
+            <p class="font-bold text-slate-800 text-lg uppercase tracking-tight">Mengirim...</p>
         </div>
     </div>
 
@@ -136,13 +136,10 @@
         let deferredPrompt;
         let userData = { sopir: '', nopol: '' };
 
-        // FUNGSI WARNING SISTEM (GANTI ALERT)
         function showWarning(msg) {
             toastMsg.innerText = msg;
             toast.classList.add('show');
-            setTimeout(() => {
-                toast.classList.remove('show');
-            }, 3000);
+            setTimeout(() => toast.classList.remove('show'), 3000);
         }
 
         window.addEventListener('load', () => {
@@ -161,7 +158,7 @@
             n = n.replace(/\s+/g, '');
 
             if (!s || !n) { 
-                showWarning("LENGKAPI DATA SOPIR & NOPOL!"); 
+                showWarning("LENGKAPI DATA TERLEBIH DAHULU!"); 
                 return; 
             }
             
@@ -182,6 +179,21 @@
                 video.srcObject = stream;
             }
         }
+
+        function stopApp() {
+            if (video.srcObject) {
+                video.srcObject.getTracks().forEach(track => track.stop());
+                video.srcObject = null;
+            }
+        }
+
+        document.addEventListener("visibilitychange", () => {
+            if (document.hidden) {
+                stopApp();
+            } else if (cameraView.style.display !== 'none') {
+                startApp();
+            }
+        });
 
         function takePhoto() {
             const context = canvas.getContext('2d');
@@ -223,16 +235,13 @@
             document.getElementById('namaProduk').value = '';
             document.getElementById('kotaTujuan').value = '';
             isUploaded = false;
+            startApp();
         }
 
         async function processUploadAndShare() {
             const produk = document.getElementById('namaProduk').value.trim();
             const kota = document.getElementById('kotaTujuan').value.trim();
-            
-            if (!produk || !kota) { 
-                showWarning("ISI NAMA BARANG & TUJUAN!"); 
-                return; 
-            }
+            if (!produk || !kota) { showWarning("ISI NAMA BARANG & TUJUAN!"); return; }
             
             loader.style.display = 'flex';
             const now = new Date();
@@ -250,7 +259,6 @@
                     const blob = await (await fetch(photoData)).blob();
                     const file = new File([blob], `${lastFileName}.jpg`, { type: "image/jpeg" });
                     const pesanWA = `${produk} ${kota}`;
-                    
                     if (navigator.share && navigator.canShare({ files: [file] })) {
                         await navigator.share({ files: [file], text: pesanWA });
                     } else {
