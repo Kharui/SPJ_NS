@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="google" content="notranslate">
-    <title>SPJ Cam v4.4</title>
+    <title>SPJ Cam v4.5</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#000000">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -31,12 +31,28 @@
         }
         #canvas { max-width: 100%; max-height: 100%; object-fit: contain; }
         #loader { display: none; z-index: 400; }
+        
+        /* Custom Toast Notification */
+        #toast {
+            position: fixed; top: -100px; left: 50%; transform: translateX(-50%);
+            z-index: 999; width: 90%; max-width: 350px;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        #toast.show { top: 30px; }
+
         @media (display-mode: standalone) { #installBanner { display: none !important; } }
         .fade-in { animation: fadeIn 0.5s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
+
+    <div id="toast" class="bg-red-600 text-white px-6 py-4 rounded-3xl shadow-2xl flex items-center gap-3">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+        <span id="toastMsg" class="font-bold text-sm tracking-tight leading-tight">Peringatan sistem</span>
+    </div>
 
     <div id="regModal" class="fixed inset-0 z-[600] bg-slate-900 flex items-center justify-center hidden p-6">
         <div class="bg-white w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl space-y-6 fade-in">
@@ -109,6 +125,8 @@
         const loader = document.getElementById('loader');
         const installBanner = document.getElementById('installBanner');
         const regModal = document.getElementById('regModal');
+        const toast = document.getElementById('toast');
+        const toastMsg = document.getElementById('toastMsg');
         
         const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwg6IBAcPdHH3ybFXNLmfs9U91HmaPamx48Un8L2FLcOuGT_Au2sy48wV-TDQFjgoo1gQ/exec"; 
         
@@ -117,6 +135,15 @@
         let lastFileName = "";
         let deferredPrompt;
         let userData = { sopir: '', nopol: '' };
+
+        // FUNGSI WARNING SISTEM (GANTI ALERT)
+        function showWarning(msg) {
+            toastMsg.innerText = msg;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
 
         window.addEventListener('load', () => {
             const saved = localStorage.getItem('spj_user_data');
@@ -131,11 +158,13 @@
         function saveRegistration() {
             const s = document.getElementById('regSopir').value.trim().toUpperCase();
             let n = document.getElementById('regNopol').value.trim().toUpperCase();
-            
-            // HAPUS SPASI PADA NOPOL UNTUK DRIVE
             n = n.replace(/\s+/g, '');
 
-            if (!s || !n) { alert("Lengkapi data!"); return; }
+            if (!s || !n) { 
+                showWarning("LENGKAPI DATA SOPIR & NOPOL!"); 
+                return; 
+            }
+            
             userData = { sopir: s, nopol: n };
             localStorage.setItem('spj_user_data', JSON.stringify(userData));
             regModal.classList.add('hidden');
@@ -199,13 +228,15 @@
         async function processUploadAndShare() {
             const produk = document.getElementById('namaProduk').value.trim();
             const kota = document.getElementById('kotaTujuan').value.trim();
-            if (!produk || !kota) { alert("Lengkapi data!"); return; }
+            
+            if (!produk || !kota) { 
+                showWarning("ISI NAMA BARANG & TUJUAN!"); 
+                return; 
+            }
             
             loader.style.display = 'flex';
             const now = new Date();
             const tgl = `${String(now.getDate()).padStart(2, '0')}-${String(now.getMonth() + 1).padStart(2, '0')}-${now.getFullYear()}`;
-            
-            // Nama File Drive (Nopol sudah bersih dari spasi karena saveRegistration)
             const formatNama = `${tgl}_${produk}_${kota}_${userData.sopir}_${userData.nopol}`;
             
             if (!isUploaded) {
