@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="google" content="notranslate">
-    <title>SPJ Cam v5.1 - Debug Mode</title>
+    <title>SPJ Cam v5.2 - Fix NaN</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#000000">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -33,7 +33,6 @@
         #canvas { max-width: 100%; max-height: 100%; object-fit: contain; }
         #loader { display: none; z-index: 400; }
         
-        /* Widget Skor Debug */
         #debugScore {
             position: absolute; top: 20px; right: 20px;
             background: rgba(0, 0, 0, 0.8); color: #00ff00;
@@ -59,12 +58,9 @@
         <div class="bg-white/95 backdrop-blur-md p-4 rounded-3xl shadow-2xl flex items-center justify-between border border-white/20">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 bg-blue-600 rounded-2xl flex items-center justify-center text-white font-black text-xs">SPJ</div>
-                <div>
-                    <p class="text-[11px] font-black text-slate-800 uppercase tracking-tight">Instal SPJ Cam</p>
-                    <p class="text-[9px] text-slate-500 font-bold leading-none">Akses Lebih Cepat</p>
-                </div>
+                <p class="text-[11px] font-black text-slate-800 uppercase">Instal SPJ Cam</p>
             </div>
-            <button onclick="triggerInstall()" class="bg-blue-600 text-white px-4 py-2 rounded-xl font-black text-[10px] uppercase">PASANG</button>
+            <button onclick="triggerInstall()" class="bg-blue-600 text-white px-4 py-2 rounded-xl font-black text-[10px] uppercase tracking-tighter">PASANG</button>
         </div>
     </div>
 
@@ -73,8 +69,8 @@
     </div>
 
     <div id="regModal" class="fixed inset-0 z-[600] bg-slate-900 flex items-center justify-center hidden p-6">
-        <div class="bg-white w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl space-y-6">
-            <h2 class="font-black text-2xl text-center uppercase italic">Data Sopir</h2>
+        <div class="bg-white w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl space-y-6 text-center">
+            <h2 class="font-black text-2xl uppercase italic">Data Sopir</h2>
             <input type="text" id="regSopir" class="w-full p-4 bg-slate-50 rounded-2xl font-bold uppercase outline-none" placeholder="NAMA ANDA">
             <input type="text" id="regNopol" class="w-full p-4 bg-slate-50 rounded-2xl font-bold uppercase outline-none" placeholder="NOMOR POLISI">
             <button onclick="saveRegistration()" class="w-full bg-slate-900 text-white py-5 rounded-3xl font-black uppercase">MASUK</button>
@@ -96,7 +92,7 @@
                 </div>
                 <input type="text" id="namaProduk" class="w-full p-4 bg-slate-50 rounded-2xl font-bold uppercase outline-none" placeholder="NAMA BARANG">
                 <input type="text" id="kotaTujuan" class="w-full p-4 bg-slate-50 rounded-2xl font-bold uppercase outline-none" placeholder="KOTA TUJUAN">
-                <button onclick="processUploadAndShare()" class="w-full bg-emerald-600 text-white py-5 rounded-[1.8rem] font-black uppercase shadow-xl active:scale-95 transition-all">KIRIM LAPORAN</button>
+                <button onclick="processUploadAndShare()" class="w-full bg-emerald-600 text-white py-5 rounded-[1.8rem] font-black uppercase shadow-xl">KIRIM LAPORAN</button>
             </div>
         </div>
     </div>
@@ -104,7 +100,7 @@
     <div id="loader" class="fixed inset-0 bg-black/80 flex flex-col items-center justify-center">
         <div class="bg-white p-10 rounded-[2.5rem] text-center shadow-2xl">
             <div class="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p class="font-bold uppercase tracking-tight">Sedang Mengirim...</p>
+            <p class="font-bold uppercase tracking-tight">Mengirim...</p>
         </div>
     </div>
 
@@ -127,21 +123,41 @@
         let deferredPrompt;
         let userData = { sopir: '', nopol: '' };
 
+        // PERBAIKAN BUG NaN
         function getSharpnessScore(cvs) {
-            const ctx = cvs.getContext('2d', { alpha: false });
-            const size = 400; 
-            const startX = Math.max(0, (cvs.width / 2) - (size / 2));
-            const startY = Math.max(0, (cvs.height / 2) - (size / 2));
-            const imageData = ctx.getImageData(startX, startY, Math.min(size, cvs.width), Math.min(size, cvs.height));
-            const pixels = imageData.data;
-            
-            let totalDiff = 0;
-            for (let i = 0; i < pixels.length; i += 4) { 
-                const gray = (pixels[i] + pixels[i+1] + pixels[i+2]) / 3;
-                const nextGray = (pixels[i+4] + pixels[i+5] + pixels[i+6]) / 3;
-                totalDiff += Math.abs(gray - nextGray);
+            try {
+                const ctx = cvs.getContext('2d', { alpha: false });
+                const size = 300; // Ukuran sample lebih kecil agar lebih aman
+                
+                // Pastikan startX dan startY tidak negatif
+                const startX = Math.floor(Math.max(0, (cvs.width / 2) - (size / 2)));
+                const startY = Math.floor(Math.max(0, (cvs.height / 2) - (size / 2)));
+                
+                // Pastikan lebar & tinggi yang diminta tidak melebihi canvas
+                const drawW = Math.min(size, cvs.width - startX);
+                const drawH = Math.min(size, cvs.height - startY);
+
+                if (drawW <= 0 || drawH <= 0) return 0.00;
+
+                const imageData = ctx.getImageData(startX, startY, drawW, drawH);
+                const pixels = imageData.data;
+                
+                let totalDiff = 0;
+                let count = 0;
+
+                for (let i = 0; i < pixels.length - 4; i += 4) { 
+                    const gray = (pixels[i] + pixels[i+1] + pixels[i+2]) / 3;
+                    const nextGray = (pixels[i+4] + pixels[i+5] + pixels[i+6]) / 3;
+                    totalDiff += Math.abs(gray - nextGray);
+                    count++;
+                }
+                
+                const score = (totalDiff / count);
+                return isNaN(score) ? 0.00 : score.toFixed(2);
+            } catch (e) {
+                console.error(e);
+                return 0.00;
             }
-            return (totalDiff / (imageData.width * imageData.height)).toFixed(2);
         }
 
         async function startApp() {
@@ -160,13 +176,18 @@
             const context = canvas.getContext('2d', { alpha: false });
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
+
+            // Jika resolusi terbaca 0 (biasanya saat awal kamera aktif)
+            if (canvas.width === 0) return;
+
             context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
             const score = getSharpnessScore(canvas);
             scoreValue.innerText = score;
             debugScore.style.display = 'block';
 
-            if (parseFloat(score) < 2.5) {
+            const numScore = parseFloat(score);
+            if (numScore < 2.5) {
                 showWarning(`SKOR: ${score} - KURANG JELAS!`, false);
             } else {
                 showWarning(`SKOR: ${score} - TAJAM`, false);
@@ -243,7 +264,7 @@
             startApp();
         }
 
-        if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js?v=5.1');
+        if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js?v=5.2');
     </script>
 </body>
 </html>
