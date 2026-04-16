@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="google" content="notranslate">
-    <title>SPJ Cam v4.7</title>
+    <title>SPJ Cam v4.8</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#000000">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -12,7 +12,13 @@
     <style>
         body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background: #000; font-family: sans-serif; }
         #cameraView { position: fixed; inset: 0; z-index: 10; display: block; }
-        #video { width: 100%; height: 100%; object-fit: cover; }
+        
+        /* Optimasi GPU untuk mencegah flicker */
+        #video { 
+            width: 100%; height: 100%; object-fit: cover; 
+            transform: translateZ(0); -webkit-transform: translateZ(0);
+        }
+
         .shutter-btn {
             position: absolute; bottom: 50px; left: 50%; transform: translateX(-50%);
             width: 75px; height: 75px; background: white; border-radius: 50%;
@@ -32,7 +38,6 @@
         #canvas { max-width: 100%; max-height: 100%; object-fit: contain; }
         #loader { display: none; z-index: 400; }
         
-        /* Custom Toast Notification */
         #toast {
             position: fixed; top: -100px; left: 50%; transform: translateX(-50%);
             z-index: 999; width: 90%; max-width: 350px;
@@ -58,54 +63,37 @@
         <div class="bg-white w-full max-w-sm rounded-[2.5rem] p-8 shadow-2xl space-y-6 fade-in">
             <div class="text-center">
                 <h2 class="font-black text-2xl uppercase tracking-tighter text-slate-800 italic">Data Kendaraan</h2>
-                <p class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-1">Data identitas untuk Google Drive</p>
+                <p class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-1">Identitas Laporan</p>
             </div>
             <div class="space-y-4">
                 <input type="text" id="regSopir" class="w-full p-4 bg-slate-50 rounded-2xl border-none outline-none focus:ring-2 focus:ring-blue-500 font-bold text-slate-800 uppercase" placeholder="NAMA SOPIR">
                 <input type="text" id="regNopol" class="w-full p-4 bg-slate-50 rounded-2xl border-none outline-none focus:ring-2 focus:ring-blue-500 font-bold text-slate-800 uppercase" placeholder="NOMOR POLISI">
             </div>
-            <button onclick="saveRegistration()" class="w-full bg-slate-900 text-white py-5 rounded-3xl font-black text-lg shadow-xl active:scale-95 transition-all uppercase tracking-tighter">
-                SIMPAN & LANJUT
-            </button>
-        </div>
-    </div>
-
-    <div id="installBanner" class="fixed top-6 left-4 right-4 z-[300] hidden fade-in">
-        <div class="bg-white/95 backdrop-blur-md p-4 rounded-3xl shadow-2xl flex items-center justify-between border border-white/20">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 bg-blue-600 rounded-2xl flex items-center justify-center text-white overflow-hidden">
-                    <img src="icon.png" alt="icon" class="w-full h-full object-cover">
-                </div>
-                <div>
-                    <p class="text-[11px] font-black text-slate-800 uppercase tracking-tight leading-none">Instal SPJ Cam</p>
-                    <p class="text-[9px] text-slate-500 font-bold mt-1">Akses stabil & offline</p>
-                </div>
-            </div>
-            <button onclick="triggerInstall()" class="bg-blue-600 text-white px-4 py-2 rounded-xl font-black text-[10px] uppercase active:scale-95 transition-all tracking-widest">PASANG</button>
+            <button onclick="saveRegistration()" class="w-full bg-slate-900 text-white py-5 rounded-3xl font-black text-lg shadow-xl active:scale-95 transition-all uppercase tracking-tighter">MULAI</button>
         </div>
     </div>
 
     <div id="cameraView">
-        <video id="video" autoplay playsinline></video>
+        <video id="video" autoplay playsinline muted></video>
         <button onclick="takePhoto()" class="shutter-btn shadow-2xl"></button>
     </div>
 
     <div id="previewView" class="flex flex-col items-center">
         <div class="w-full max-w-md">
-            <h2 class="text-white text-center font-black text-lg italic uppercase my-4 tracking-tighter">Review Laporan</h2>
+            <h2 class="text-white text-center font-black text-lg italic uppercase my-4 tracking-tighter">Review Foto</h2>
             <div class="preview-container">
                 <canvas id="canvas"></canvas>
             </div>
             <div class="bg-white p-6 rounded-[2.5rem] shadow-2xl space-y-4">
                 <div class="grid grid-cols-2 gap-3">
                     <button onclick="rotateManual()" class="bg-amber-500 text-white py-3.5 rounded-2xl font-bold text-sm uppercase">🔄 Putar</button>
-                    <button onclick="resetCamera()" class="bg-slate-100 text-slate-500 py-3.5 rounded-2xl font-bold text-sm uppercase tracking-tighter">📸 Ulangi</button>
+                    <button onclick="resetCamera()" class="bg-slate-100 text-slate-500 py-3.5 rounded-2xl font-bold text-sm uppercase">📸 Ulangi</button>
                 </div>
                 <div class="space-y-3">
                     <input type="text" id="namaProduk" class="w-full p-4 bg-slate-50 rounded-2xl border-none outline-none focus:ring-2 focus:ring-blue-500 font-bold text-slate-800 uppercase" placeholder="NAMA BARANG">
                     <input type="text" id="kotaTujuan" class="w-full p-4 bg-slate-50 rounded-2xl border-none outline-none focus:ring-2 focus:ring-blue-500 font-bold text-slate-800 uppercase" placeholder="TUJUAN">
                 </div>
-                <button id="btnSubmit" onclick="processUploadAndShare()" class="w-full bg-emerald-600 text-white py-5 rounded-[1.8rem] font-black text-lg shadow-xl active:scale-95 transition-all uppercase tracking-tighter">KIRIM LAPORAN</button>
+                <button id="btnSubmit" onclick="processUploadAndShare()" class="w-full bg-emerald-600 text-white py-5 rounded-[1.8rem] font-black text-lg shadow-xl active:scale-95 transition-all uppercase tracking-tighter">KIRIM WA & DRIVE</button>
             </div>
         </div>
     </div>
@@ -113,7 +101,7 @@
     <div id="loader" class="fixed inset-0 bg-black/80 flex flex-col items-center justify-center">
         <div class="bg-white p-10 rounded-[2.5rem] text-center shadow-2xl">
             <div class="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p class="font-bold text-slate-800 text-lg uppercase tracking-tight">Proses Kirim...</p>
+            <p class="font-bold text-slate-800 text-lg uppercase tracking-tight">Mengirim Data...</p>
         </div>
     </div>
 
@@ -126,19 +114,16 @@
         const toast = document.getElementById('toast');
         const toastMsg = document.getElementById('toastMsg');
         const regModal = document.getElementById('regModal');
-        const installBanner = document.getElementById('installBanner');
         
         const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwg6IBAcPdHH3ybFXNLmfs9U91HmaPamx48Un8L2FLcOuGT_Au2sy48wV-TDQFjgoo1gQ/exec"; 
         
         let photoData = null;
         let isUploaded = false; 
-        let lastFileName = "";
-        let deferredPrompt;
         let userData = { sopir: '', nopol: '' };
 
-        // DETEKSI BLUR (Laplacian Variance)
+        // 1. DETEKSI BLUR (Laplacian Variance)
         function isImageBlurry(cvs) {
-            const ctx = cvs.getContext('2d');
+            const ctx = cvs.getContext('2d', { alpha: false });
             const imageData = ctx.getImageData(0, 0, cvs.width, cvs.height);
             const pixels = imageData.data;
             const width = imageData.width;
@@ -150,8 +135,8 @@
             }
 
             let score = 0;
-            for (let y = 1; y < height - 1; y++) {
-                for (let x = 1; x < width - 1; x++) {
+            for (let y = 1; y < height - 1; y += 2) { // Sampling tiap 2 pixel untuk performa
+                for (let x = 1; x < width - 1; x += 2) {
                     const idx = y * width + x;
                     const val = (grayData[idx] * 4) - 
                                 grayData[idx - 1] - grayData[idx + 1] - 
@@ -159,40 +144,32 @@
                     score += Math.abs(val);
                 }
             }
-            const finalScore = score / (width * height);
-            return finalScore < 9; // Ambang batas blur (adjust jika perlu)
+            return (score / (width * height)) < 12; // Threshold adaptif
         }
 
         function showWarning(msg, isAlert = true) {
             toastMsg.innerText = msg;
-            toast.className = `fixed left-50 transform -translate-x-1/2 z-[999] width-[90%] max-w-[350px] transition-all p-4 rounded-3xl shadow-2xl flex items-center gap-3 text-white ${isAlert ? 'bg-red-600' : 'bg-amber-500'}`;
+            toast.className = `fixed left-50 transform -translate-x-1/2 z-[999] w-[90%] max-w-[350px] transition-all p-4 rounded-3xl shadow-2xl flex items-center gap-3 text-white ${isAlert ? 'bg-red-600' : 'bg-amber-500'}`;
             toast.classList.add('show');
             setTimeout(() => toast.classList.remove('show'), 3500);
         }
 
-        window.addEventListener('load', () => {
-            const saved = localStorage.getItem('spj_user_data');
-            if (saved) { userData = JSON.parse(saved); startApp(); } 
-            else { regModal.classList.remove('hidden'); }
-        });
-
-        function saveRegistration() {
-            const s = document.getElementById('regSopir').value.trim().toUpperCase();
-            let n = document.getElementById('regNopol').value.trim().toUpperCase();
-            n = n.replace(/\s+/g, '');
-            if (!s || !n) { showWarning("Lengkapi data sopir & nopol!"); return; }
-            userData = { sopir: s, nopol: n };
-            localStorage.setItem('spj_user_data', JSON.stringify(userData));
-            regModal.classList.add('hidden');
-            startApp();
-        }
-
+        // 2. KAMERA ADAPTIF (Fokus Perbaikan HP Low-End)
         async function startApp() {
+            const constraints = {
+                video: { 
+                    facingMode: "environment",
+                    // Meminta rentang resolusi agar browser bisa menyesuaikan beban RAM
+                    width: { min: 640, ideal: 1280, max: 1920 },
+                    height: { min: 480, ideal: 720, max: 1080 },
+                    frameRate: { ideal: 24, max: 30 } // Batasi FPS agar tidak panas
+                }
+            };
+
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { facingMode: "environment", width: { ideal: 4096 }, height: { ideal: 2160 } } 
-                });
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
                 video.srcObject = stream;
+                video.onloadedmetadata = () => video.play();
             } catch (err) {
                 const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
                 video.srcObject = stream;
@@ -211,43 +188,40 @@
             else if (cameraView.style.display !== 'none') startApp();
         });
 
+        // 3. PENGAMBILAN GAMBAR HYBRID
         function takePhoto() {
-            const context = canvas.getContext('2d');
+            const context = canvas.getContext('2d', { alpha: false });
+            if (video.readyState < 2) return;
+
             let vW = video.videoWidth;
             let vH = video.videoHeight;
+
+            // Gambar ke canvas dengan rotasi otomatis
             if (vH > vW) {
                 canvas.width = vH; canvas.height = vW;
+                context.save();
                 context.translate(canvas.width / 2, canvas.height / 2);
                 context.rotate(-90 * Math.PI / 180); 
                 context.drawImage(video, -vW / 2, -vH / 2, vW, vH);
+                context.restore();
             } else {
                 canvas.width = vW; canvas.height = vH;
                 context.drawImage(video, 0, 0, vW, vH);
             }
 
-            // CEK KUALITAS GAMBAR SEBELUM PREVIEW
-            if (isImageBlurry(canvas)) {
-                showWarning("FOTO BURAM! MOHON AMBIL ULANG AGAR JELAS", false);
-            }
+            // Langsung matikan kamera setelah jepret (Bebaskan RAM)
+            stopApp(); 
 
-            photoData = canvas.toDataURL('image/jpeg', 0.85);
+            // Cek Blur dengan sedikit delay agar CPU stabil
+            setTimeout(() => {
+                if (isImageBlurry(canvas)) {
+                    showWarning("FOTO BURAM! MOHON AMBIL ULANG", false);
+                }
+            }, 200);
+
+            photoData = canvas.toDataURL('image/jpeg', 0.8); // Kompresi 80% (Ringan & Cukup Tajam)
             cameraView.style.display = 'none';
             previewView.style.display = 'flex';
-            isUploaded = false; 
-        }
-
-        function rotateManual() {
-            const tempCanvas = document.createElement('canvas');
-            const tempCtx = tempCanvas.getContext('2d');
-            tempCanvas.width = canvas.height;
-            tempCanvas.height = canvas.width;
-            tempCtx.translate(tempCanvas.width / 2, tempCanvas.height / 2);
-            tempCtx.rotate(90 * Math.PI / 180); 
-            tempCtx.drawImage(canvas, -canvas.width / 2, -canvas.height / 2);
-            canvas.width = tempCanvas.width;
-            canvas.height = tempCanvas.height;
-            canvas.getContext('2d').drawImage(tempCanvas, 0, 0);
-            photoData = canvas.toDataURL('image/jpeg', 0.85);
             isUploaded = false; 
         }
 
@@ -260,10 +234,11 @@
             startApp();
         }
 
+        // 4. PROSES KIRIM
         async function processUploadAndShare() {
-            const produk = document.getElementById('namaProduk').value.trim();
-            const kota = document.getElementById('kotaTujuan').value.trim();
-            if (!produk || !kota) { showWarning("Isi nama barang & tujuan!"); return; }
+            const produk = document.getElementById('namaProduk').value.trim().toUpperCase();
+            const kota = document.getElementById('kotaTujuan').value.trim().toUpperCase();
+            if (!produk || !kota) { showWarning("Isi Nama Barang & Tujuan!"); return; }
             
             loader.style.display = 'flex';
             const now = new Date();
@@ -273,13 +248,12 @@
             if (!isUploaded) {
                 fetch(WEB_APP_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ image: photoData, name: formatNama }) });
                 isUploaded = true;
-                lastFileName = formatNama;
             }
 
             setTimeout(async () => {
                 try {
                     const blob = await (await fetch(photoData)).blob();
-                    const file = new File([blob], `${lastFileName}.jpg`, { type: "image/jpeg" });
+                    const file = new File([blob], `${formatNama}.jpg`, { type: "image/jpeg" });
                     const pesanWA = `${produk} ${kota}`;
                     if (navigator.share && navigator.canShare({ files: [file] })) {
                         await navigator.share({ files: [file], text: pesanWA });
@@ -291,18 +265,20 @@
             }, 800);
         }
 
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            installBanner.style.display = 'block';
+        window.addEventListener('load', () => {
+            const saved = localStorage.getItem('spj_user_data');
+            if (saved) { userData = JSON.parse(saved); startApp(); } 
+            else { regModal.classList.remove('hidden'); }
         });
 
-        async function triggerInstall() {
-            if (!deferredPrompt) return;
-            deferredPrompt.prompt();
-            const { outcome } = await deferredPrompt.userChoice;
-            if (outcome === 'accepted') installBanner.style.display = 'none';
-            deferredPrompt = null;
+        function saveRegistration() {
+            const s = document.getElementById('regSopir').value.trim().toUpperCase();
+            const n = document.getElementById('regNopol').value.trim().toUpperCase().replace(/\s+/g, '');
+            if (!s || !n) { showWarning("Data belum lengkap!"); return; }
+            userData = { sopir: s, nopol: n };
+            localStorage.setItem('spj_user_data', JSON.stringify(userData));
+            regModal.classList.add('hidden');
+            startApp();
         }
 
         if ('serviceWorker' in navigator) {
